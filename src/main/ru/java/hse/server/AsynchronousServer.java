@@ -14,6 +14,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class AsynchronousServer extends Server {
     private ExecutorService workerThreadPool;
@@ -61,6 +63,10 @@ public class AsynchronousServer extends Server {
         private boolean readingSize = true;
         private final WriteData writeData = new WriteData();
 
+        private final Lock queue = new ReentrantLock();
+
+        private final AtomicBoolean closed = new AtomicBoolean(false);
+
         private class WriteData {
             private final AtomicBoolean writeWorking = new AtomicBoolean(false);
             private final Queue<Pair<ByteBuffer, Integer>> outputs = new ConcurrentLinkedQueue<>();
@@ -88,20 +94,23 @@ public class AsynchronousServer extends Server {
                     channel.write(writeData.currentBuffer, writeData, this);
                     return;
                 }
-//                System.out.println("Отправил сообщение клиенту " + writeData.currentId);
                 endMeasure(writeData.currentId, clientId);
-                if (!writeData.outputs.isEmpty()) {
-                    channel.write(writeData.getNextOutput(), writeData, this);
-                } else {
-                    writeData.writeWorking.set(false);
+
+                queue.lock();
+                try {
+                    if (!writeData.outputs.isEmpty()) {
+                        channel.write(writeData.getNextOutput(), writeData, this);
+                    } else {
+                        writeData.writeWorking.set(false);
+                    }
+                } finally {
+                    queue.unlock();
                 }
             }
 
             @Override
             public void failed(Throwable throwable, WriteData writeData) {
                 close();
-//                System.err.println("Не удалось записать");
-//                throwable.printStackTrace();
             }
         };
         public final CompletionHandler<Integer, ClientHandler> readHandler = new CompletionHandler<>() {
@@ -113,22 +122,18 @@ public class AsynchronousServer extends Server {
                 }
                 if (client.readingSize) {
                     if (client.sizeBuffer.hasRemaining()) {
-//                        System.err.println("Продолжаю читать размер");
                         client.channel.read(client.sizeBuffer, client, this);
                         return;
                     }
                     // Начинаем читать сообщение
-//                    System.err.println("Начинаю читать сообщение");
                     startReadArray(client);
                     return;
                 }
                 if (client.arrayBuffer.hasRemaining()) {
-//                    System.err.println("Продолжаю читать сообщение");
                     client.channel.read(client.arrayBuffer, client, this);
                     return;
                 }
                 // Надо отправить сообщение
-//                System.err.println("закончил читать сообщение");
                 client.readingSize = true;
                 ByteBuffer buffer = client.arrayBuffer;
 
@@ -136,7 +141,6 @@ public class AsynchronousServer extends Server {
                 processTask(client, buffer);
 
                 // Начинаем читать новое сообщение
-//                System.err.println("Начинаю читать размер сообщения");
                 client.channel.read(client.sizeBuffer, client, this);
             }
 
@@ -152,15 +156,12 @@ public class AsynchronousServer extends Server {
             @Override
             public void failed(Throwable throwable, ClientHandler clientHandler) {
                 clientHandler.close();
-//                System.err.println("Не удалось прочитать");
-//                throwable.printStackTrace();
             }
 
             private void processTask(ClientHandler client, ByteBuffer dataBuffer) {
                 try {
                     dataBuffer.flip();
                     IntArray data = Utils.readArray(dataBuffer);
-//                    System.err.println("Отправляю сообщение на сортировку " + data.id());
                     startMeasure(data.id(), client.clientId);
                     workerThreadPool.submit(() -> {
                         IntArray newData = IntArray.sort(data);
@@ -179,20 +180,27 @@ public class AsynchronousServer extends Server {
         }
 
         public void write(ByteBuffer buffer, int id) {
-            writeData.outputs.add(new Pair<>(buffer, id));
-            if (writeData.writeWorking.compareAndSet(false, true)) {
-                channel.write(writeData.getNextOutput(), writeData, writeHandler);
+            queue.lock();
+            try {
+                writeData.outputs.add(new Pair<>(buffer, id));
+                if (writeData.writeWorking.compareAndSet(false, true)) {
+                    channel.write(writeData.getNextOutput(), writeData, writeHandler);
+                }
+            } finally {
+                queue.unlock();
             }
         }
 
         public void close() {
-            try {
-                System.out.println("Закончил обработку клиента " + clientId);
+            if (closed.compareAndSet(false, true)) {
                 stopCollectingStatistics();
-                if (channel.isOpen()) {
-                    channel.close();
+                try {
+                    if (channel.isOpen()) {
+                        channel.close();
+                    }
+                } catch (IOException ignored) {
+
                 }
-            } catch (IOException ignored) {
             }
         }
     }
