@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option java_package = "ru.hse.message";
+option java_outer_classname = "IntArrayProtos";
+
+message IntArray {
+    int32 id = 1;
+    repeated int32 array = 2;
+}
