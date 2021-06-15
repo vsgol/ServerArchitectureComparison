@@ -53,7 +53,7 @@ public class Main {
                 case NUMBER_OF_CLIENTS -> numberOfClients = value;
                 case TIME_BETWEEN_REQUESTS -> timeDelta = value;
             }
-            sb.append(par).append(' ').append(value).append(System.lineSeparator());
+            sb.append(par).append(": ").append(value).append(System.lineSeparator());
         }
         sb.append('\n');
         for (int i : bounds) {

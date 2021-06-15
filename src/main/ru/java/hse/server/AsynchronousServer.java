@@ -35,7 +35,7 @@ public class AsynchronousServer extends Server {
 
                 @Override
                 public void failed(Throwable throwable, AsynchronousServerSocketChannel unused) {
-//                    System.out.println("Не удалось открыть сервер");
+//                    System.out.println("Не удалось подключить клиента");
                 }
             });
         } catch (IOException e) {
@@ -88,6 +88,7 @@ public class AsynchronousServer extends Server {
                     channel.write(writeData.currentBuffer, writeData, this);
                     return;
                 }
+//                System.out.println("Отправил сообщение клиенту " + writeData.currentId);
                 endMeasure(writeData.currentId, clientId);
                 if (!writeData.outputs.isEmpty()) {
                     channel.write(writeData.getNextOutput(), writeData, this);
@@ -99,7 +100,8 @@ public class AsynchronousServer extends Server {
             @Override
             public void failed(Throwable throwable, WriteData writeData) {
                 close();
-//                System.out.println("Не удалось записать");
+//                System.err.println("Не удалось записать");
+//                throwable.printStackTrace();
             }
         };
         public final CompletionHandler<Integer, ClientHandler> readHandler = new CompletionHandler<>() {
@@ -111,33 +113,38 @@ public class AsynchronousServer extends Server {
                 }
                 if (client.readingSize) {
                     if (client.sizeBuffer.hasRemaining()) {
+//                        System.err.println("Продолжаю читать размер");
                         client.channel.read(client.sizeBuffer, client, this);
                         return;
                     }
                     // Начинаем читать сообщение
+//                    System.err.println("Начинаю читать сообщение");
                     startReadArray(client);
                     return;
                 }
                 if (client.arrayBuffer.hasRemaining()) {
+//                    System.err.println("Продолжаю читать сообщение");
                     client.channel.read(client.arrayBuffer, client, this);
                     return;
                 }
                 // Надо отправить сообщение
+//                System.err.println("закончил читать сообщение");
                 client.readingSize = true;
                 ByteBuffer buffer = client.arrayBuffer;
 
-                // Начинаем читать новое сообщение
-                client.channel.read(client.sizeBuffer, client, this);
-
                 // Отправляем решаться задачу
                 processTask(client, buffer);
+
+                // Начинаем читать новое сообщение
+//                System.err.println("Начинаю читать размер сообщения");
+                client.channel.read(client.sizeBuffer, client, this);
             }
 
             private void startReadArray(ClientHandler client) {
                 client.readingSize = false;
                 client.sizeBuffer.flip();
-                client.sizeBuffer.clear();
                 int size = client.sizeBuffer.getInt();
+                client.sizeBuffer.clear();
                 client.arrayBuffer = ByteBuffer.allocate(size);
                 client.channel.read(client.arrayBuffer, client, this);
             }
@@ -145,19 +152,22 @@ public class AsynchronousServer extends Server {
             @Override
             public void failed(Throwable throwable, ClientHandler clientHandler) {
                 clientHandler.close();
+//                System.err.println("Не удалось прочитать");
+//                throwable.printStackTrace();
             }
 
             private void processTask(ClientHandler client, ByteBuffer dataBuffer) {
                 try {
                     dataBuffer.flip();
                     IntArray data = Utils.readArray(dataBuffer);
-                    final int id = data.id();
-                    startMeasure(id, client.clientId);
+//                    System.err.println("Отправляю сообщение на сортировку " + data.id());
+                    startMeasure(data.id(), client.clientId);
                     workerThreadPool.submit(() -> {
                         IntArray newData = IntArray.sort(data);
                         client.write(Utils.writeArray(newData), newData.id());
                     });
-                } catch (IOException ignored) {
+                } catch (IOException e) {
+                    e.printStackTrace();
                     client.close();
                 }
             }
@@ -177,6 +187,7 @@ public class AsynchronousServer extends Server {
 
         public void close() {
             try {
+                System.out.println("Закончил обработку клиента " + clientId);
                 stopCollectingStatistics();
                 if (channel.isOpen()) {
                     channel.close();
