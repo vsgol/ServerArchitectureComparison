@@ -9,8 +9,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.util.LinkedList;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -69,7 +69,7 @@ public class AsynchronousServer extends Server {
 
         private class WriteData {
             private final AtomicBoolean writeWorking = new AtomicBoolean(false);
-            private final Queue<Pair<ByteBuffer, Integer>> outputs = new ConcurrentLinkedQueue<>();
+            private final Queue<Pair<ByteBuffer, Integer>> outputs = new LinkedList<>();
             private volatile ByteBuffer currentBuffer;
             private int currentId;
 

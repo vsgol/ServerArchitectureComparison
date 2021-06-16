@@ -1,0 +1,33 @@
+Type of server: asynchronous
+Number of requests from each client: 300
+Current testing parameter: time between requests
+Bounds of time between requests: from 0 to 50 with step 1
+array size: 100
+number of clients: 300
+
+0 558
+1 245
+2 410
+3 423
+4 325
+5 40
+6 27
+7 18
+8 18
+9 1
+10 1
+11 4
+12 5
+13 1
+14 2
+15 1
+16 0
+17 1
+18 2
+19 4
+20 3
+21 1
+22 2
+23 2
+24 2
+25 1
