@@ -1,0 +1,26 @@
+Type of server: asynchronous
+Number of requests from each client: 100
+Current testing parameter: array size
+Bounds of array size: from 1000 to 10000 with step 500
+number of clients: 25
+time between requests: 100
+
+1000 11
+1500 14
+2000 14
+2500 19
+3000 20
+3500 23
+4000 1573
+4500 4259
+5000 6546
+5500 9065
+6000 12504
+6500 15305
+7000 18731
+7500 22692
+8000 26988
+8500 31531
+9000 36009
+9500 41646
+10000 46887

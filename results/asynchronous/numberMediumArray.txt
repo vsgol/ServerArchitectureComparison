@@ -1,0 +1,26 @@
+Type of server: asynchronous
+Number of requests from each client: 100
+Current testing parameter: number of clients
+Bounds of number of clients: from 100 to 1000 with step 50
+array size: 1000
+time between requests: 100
+
+100 8
+150 17
+200 15
+250 586
+300 2595
+350 3365
+400 4052
+450 5242
+500 6214
+550 6645
+600 7328
+650 8651
+700 8618
+750 10182
+800 9942
+850 11335
+900 11131
+950 11666
+1000 12655

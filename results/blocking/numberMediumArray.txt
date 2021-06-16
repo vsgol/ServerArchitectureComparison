@@ -1,0 +1,26 @@
+Type of server: blocking
+Number of requests from each client: 100
+Current testing parameter: number of clients
+Bounds of number of clients: from 100 to 1000 with step 50
+array size: 1000
+time between requests: 100
+
+100 11
+150 5
+200 11
+250 10
+300 224
+350 1717
+400 2789
+450 3319
+500 4091
+550 5183
+600 5733
+650 6117
+700 6536
+750 6970
+800 8699
+850 7870
+900 7756
+950 6083
+1000 9852

@@ -1,0 +1,26 @@
+Type of server: blocking
+Number of requests from each client: 100
+Current testing parameter: number of clients
+Bounds of number of clients: from 100 to 1000 with step 50
+array size: 100
+time between requests: 10
+
+100 10
+150 2
+200 7
+250 1
+300 1
+350 2
+400 15
+450 63
+500 58
+550 15
+600 59
+650 33
+700 16
+750 32
+800 48
+850 41
+900 14
+950 35
+1000 20
